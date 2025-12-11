@@ -1,35 +1,38 @@
 from typing import TypedDict
+import typing
 
 input = open('input.txt').read()
 
 class Node(TypedDict):
-    id: str
     children_ids: list[str]
+    known_out_path_count: typing.Optional[int]
 
-nodes: list[Node] = []
+nodes: dict[str, Node] = {}
 
 for line in input.splitlines():
-    nodes.append({
-        "id": line.split(":")[0],
+    nodes[line.split(":")[0]] = {
         "children_ids": [
             child
             for child in line.split(":")[1].split()
-        ]
-    })
+        ],
+        "known_out_path_count": None,
+    }
 
-def find_node(id: str):
-    for node in nodes:
-        if node["id"] == id:
-            return node
-
-out_paths = 0
 def search_node(node: Node):
-    global out_paths
+    # try cache
+    if node["known_out_path_count"] is not None:
+        return node["known_out_path_count"]
+    node["known_out_path_count"] = 0
+
+    # search
+    out_paths = 0
     for child_id in node["children_ids"]:
         if child_id == "out":
             out_paths += 1
         else:
-            search_node(find_node(child_id))
+            out_paths += search_node(nodes[child_id])
+    
+    node["known_out_path_count"] = out_paths
+    return out_paths
 
-search_node(find_node("you"))
-print(out_paths)
+print(search_node(nodes["you"]))
